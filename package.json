@@ -1,0 +1,77 @@
+{
+  "name": "@solidlab/sdx-sdk",
+  "version": "1.0.0-beta.18",
+  "description": "Solid Development Experience SDK library",
+  "main": "./dist/index.js",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "require": "./dist/index.js",
+      "import": "./dist/index.mjs",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsup",
+    "build:watch": "npm run build -- --watch",
+    "build:prod": "cross-env NODE_ENV=production tsup",
+    "test": "jest --config jest.config.ts",
+    "lint": "eslint . --ext .ts",
+    "lint:fix": "eslint . --ext .ts --fix",
+    "prettier-format": "prettier --config .prettierrc src/**/*.ts --write",
+    "prepare": "husky install"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SolidLabResearch/sdx-sdk.git"
+  },
+  "keywords": [],
+  "author": "Thomas Dupont <thomas.dupont@ugent.be>",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/SolidLabResearch/sdx-sdk/issues"
+  },
+  "homepage": "https://github.com/SolidLabResearch/sdx-sdk#readme",
+  "dependencies": {
+    "@abraham/reflection": "^0.12.0",
+    "@graphql-tools/graphql-file-loader": "^7.5.16",
+    "@graphql-tools/load": "^7.8.13",
+    "@graphql-tools/schema": "^9.0.19",
+    "@inrupt/solid-client-authn-core": "^1.16.0",
+    "graphql": "^16.6.0",
+    "graphql-tag": "^2.12.6",
+    "js-base64": "^3.7.5",
+    "n3": "^1.16.3",
+    "stream-browserify": "^3.0.0",
+    "tsyringe": "^4.7.0",
+    "uuid": "^9.0.0"
+  },
+  "devDependencies": {
+    "@types/jest": "^29.5.0",
+    "@types/n3": "^1.10.4",
+    "@types/node": "^18.15.3",
+    "@types/uuid": "^9.0.1",
+    "@typescript-eslint/eslint-plugin": "^5.58.0",
+    "@typescript-eslint/parser": "^5.58.0",
+    "cross-env": "^7.0.3",
+    "eslint": "^8.38.0",
+    "eslint-config-prettier": "^8.8.0",
+    "eslint-plugin-jest-extended": "^2.0.0",
+    "eslint-plugin-prettier": "^4.2.1",
+    "husky": "^8.0.0",
+    "jest": "^29.5.0",
+    "jest-extended": "^3.2.4",
+    "prettier": "^2.8.7",
+    "ts-jest": "^29.1.0",
+    "ts-node": "^10.9.1",
+    "tsup": "^6.6.3",
+    "typescript": "^4.9.5"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

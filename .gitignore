@@ -1,0 +1,9 @@
+node_modules
+dist
+lib
+coverage
+
+
+.vscode/
+
+test/assets/data/contacts.ttl.patch
