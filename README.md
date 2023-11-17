@@ -1,25 +1,33 @@
 # Solid Development eXperience (SDX) SDK
 
-This library is meant to facilitate easy development of Solid applications. The library will translate Solid data types (written in SHACL) in to a local GraphQL Schema. 
+This library is meant to facilitate easy development of Solid applications. The library uses a (SDL) GraphQL Schema as input and generates a client proxy sdk from it, that can be imported and used to interact with data on a Solid Pod. 
 
 This enables a couple of features:
 
 * The generated schema can be used by any of your favorite GraphQL IDE plugins.
-* You can write your own GraphQL queries with plugin support.
-* A fully typed SolidClient will be generated from your queries to use in you application
+* You can write your own GraphQL queries against data hosted on a targeted Solid Pod.
+* Your IDE's plugins can leverage the GraphQL Schema to generate IntelliSense suggestions when writing GraphQL Queries.
+* Your IDE's plugins can leverage the type information in the `sdk.generated.ts` file to generate IntelliSense suggestions while writing TypeScript code.
+* A fully typed SolidClient generated from your queries, can be used in your application
+
+*This library ideally works in tandem with the SDX cli library (@solidlab/solid-sdx-cli)*
 
 ## Install
 
 ```bash
-npm install @solidlab/sdx-sdk @solidlab/sdx
+npm install @solidlab/solid-sdx-ts
 ```
 
 ## Usage
+
+### Init sdx project
 ```bash
-# !! Demo only right now !!
-docker run --name css -p 3000:3000 -d tdupont/css # spin up docker container with demo data
-npx sdx demo install contact # installs SHACL from the pod
+# Setup project with sdx cli and then install a shape package.
+
+#
+
 ```
+
 
 This triggers the following steps:
 
@@ -28,6 +36,24 @@ This triggers the following steps:
     * You can write queries and mutations in your `/src/gql` folder.
     * This the queries and schema will be used to generate the `/src/sdx-gen/sdk.generated.ts` file.
     * To create a SolidClient, import this file in your code.
+
+### Instantiate SolidClient
+
+```ts
+import { SolidLDPBackend, SolidLDPContext, StaticTargetResolver } from '@solidlab/sdx-sdk';
+import { getSolidClient, Sdk } from 'src/.sdx-gen/sdk.generated';
+
+// Create a backend that statically resolves to one (Pod) URI.
+const resolver = new StaticTargetResolver('http://localhost:3000/complex.ttl'); 
+const defaultContext = new SolidLDPContext(resolver);
+const { requester } = new SolidLDPBackend({ defaultContext });
+// Create the client with fully types support
+const client: Sdk = getSolidClient(requester);
+```
+
+### Using the client
+
+After running `sdx generate sdk`, given these sample queries: 
 
 **Queries example**
 ```graphql
@@ -62,16 +88,18 @@ mutation createContact($id: ID, $givenName: String!, $familyName: String!) {
 }
 ```
 
-**Code**
+The client can be used like this:
+
 ```ts
 import { SolidLDPBackend, SolidLDPContext } from '@solidlab/sdx-sdk';
 import { Contact, getSolidClient, Sdk } from 'src/.sdx-gen/sdk.generated';
 
 // Create a backend that statically resolves to one (Pod) URI.
-const defaultContext = new SolidLDPContext('http://localhost:3000/complex.ttl'); 
-const backend = new SolidLDPBackend({ defaultContext });
+const resolver = new StaticTargetResolver('http://localhost:3000/complex.ttl'); 
+const defaultContext = new SolidLDPContext(resolver);
+const { requester } = new SolidLDPBackend({ defaultContext });
 // Create the client with fully types support
-const client = getSolidClient(backend.requester);
+const client: Sdk = getSolidClient(requester);
 
 // Use the client to read
 const contacts = (await client.listContacts()).data;
@@ -88,15 +116,27 @@ await client.createContact({
 });
 ```
 
-## Notes
+## Configuration
 
-### ExecutionEnvelope
 
-For now results of the generated SolidClient API are wrapped in an ExecutionResult envelope containing an `error` and a `data` key. There is however an option to bypass the ExecutionResult envelope and either return the `data` contents directly or the `error` content directly (if an error occurred).
+**.sdxconfig**
 
-### Container vs Document
+*This is actually configuration of the cli library, but some options here will generate a different Sdk format.*
 
-There is preliminary support for two storage approaches:
+```json
+{
+    "formatVersion": "1.0.0",   // Format version for backwards compatibility and migration
+    "catalogs": [               // Catalogs to contact for searching and installing
+        {
+            "name": "SolidLab Catalog",
+            "uri": "https://catalog.solidlab.be"
+        }
+    ],
+    "options": {
+        "autoGenerate": true,   // Autogenerate again after each shape (un)install
+        "resultEnvelope": false // If true:  wrap in an `ExecutionResult` envelope with `data` and `error` keys.
+                                // If false: output only `data` value.
+    }
+}
 
-* **Document** All data is stored in one document.
-* **Container** A parent contains an index to the children documents, in which the child data is stored.
+```

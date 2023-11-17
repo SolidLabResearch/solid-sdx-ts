@@ -21,8 +21,20 @@ jobs:
       - run: npm ci --ignore-scripts
       - run: npm run lint
 
+  build:
+    needs: 
+      - lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3.5.1
+      - uses: actions/setup-node@v3
+        with:
+          node-version: '18.x'
+      - run: npm ci
+      - run: npm run build
+
   test-linux:
-    needs: lint
+    needs: build
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
@@ -32,8 +44,6 @@ jobs:
           - '18.0'
           - '18.x'
           - '19.x'
-    env:
-      TEST_DOCKER: true
     services:
       authed-css:
         image: ghcr.io/solidlabresearch/css-test-auth:latest
@@ -52,10 +62,10 @@ jobs:
       - name: Install dependencies and run build scripts
         run: npm ci
       - name: Run unit tests
-        run: npm run test
+        run: npm run test:docker
   
   test-windows:
-    needs: lint
+    needs: build
     runs-on: ${{ matrix.operating-system }}
     strategy:
       matrix:
@@ -65,8 +75,6 @@ jobs:
           - '18.0'
           - '18.x'
           - '19.x'
-    env:
-      TEST_DOCKER: false
     timeout-minutes: 10
     steps:
       - name: Use Node.js ${{ matrix.node-version }}
@@ -82,16 +90,4 @@ jobs:
       - name: Run unit tests
         run: npm run test
 
-  build:
-    needs: 
-      - test-linux
-      - test-windows
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v3.5.1
-      - uses: actions/setup-node@v3
-        with:
-          node-version: '18.x'
-      - run: npm ci
-      - run: npm run build
-    
+  

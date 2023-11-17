@@ -7,3 +7,5 @@ coverage
 .vscode/
 
 test/assets/data/contacts.ttl.patch
+
+.npmrc

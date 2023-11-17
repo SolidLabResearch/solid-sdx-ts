@@ -1,0 +1,17 @@
+{
+    "git": {
+        "requireCleanWorkingDir": false,
+        "commit": false,
+        "push": false
+    },
+    "npm": {
+        "publish": true
+    },
+    "gitlab": {
+        "release": false
+    },
+    "github": {
+        "release": true,
+        "releaseNotes": "echo 'View changes in the [CHANGELOG](CHANGELOG.md).'"
+    }
+}

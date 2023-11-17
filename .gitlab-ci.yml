@@ -1,0 +1,90 @@
+variables:
+  PIPELINE_TITLE: "Build & test pipeline"
+  RELEASE: 
+    value: "none"
+    description: "Release type => (one of) patch, minor, major, prepatch, preminor, premajor, prerelease"
+    options: 
+      - major
+      - minor
+      - patch
+      - premajor
+      - preminor
+      - prepatch
+      - prerelease
+      - none
+
+workflow:
+  rules:
+    # Run on MR
+    - if: $CI_PIPELINE_SOURCE == "merge_request_event"
+    # Run on main branch commit
+    - if: $CI_COMMIT_BRANCH == $CI_DEFAULT_BRANCH
+    - if: $RELEASE =~ /^(major|minor|patch|premajor|preminor|prepatch|prerelease)$/
+      variables:
+        PIPELINE_TITLE: "Release $RELEASE pipeline"
+  name: $PIPELINE_TITLE
+
+# Request our own k8s tagged runner
+default:
+  image: node:18
+  tags:
+    - k8s
+  cache:
+    key:
+      files:
+        - package.json
+    paths:
+      - node_modules
+
+stages:
+  - build
+  - test
+  - deploy
+
+build-code:       # This job runs in the build stage, which runs first.
+  stage: build
+  script:
+    - echo "Compiling the code..."
+    - npm ci
+    - npm run build
+    - echo "Compile complete."
+
+test-job:   # This job runs in the test stage.
+  stage: test    # It only starts when the job in the build stage completes successfully.
+  services:
+    - name: gitlab.ilabt.imec.be:4567/ibcndevs/solid/solid-sdx-ts/css-test-auth:latest
+  script:
+    - echo "Running unit tests..."
+    - npm run test:docker
+
+release-private:
+  rules:
+    - if: $RELEASE != "none"
+  stage: deploy
+  before_script:
+    - git checkout $CI_COMMIT_REF_NAME
+    - git remote set-url origin "https://$TOKEN_NAME:$ACCESS_TOKEN@gitlab.ilabt.imec.be/$CI_PROJECT_PATH.git"
+    - git config --global user.name "${CI_USERNAME}"
+    - git config --global user.email "${CI_EMAIL}"
+    - npm install
+  script: 
+    - echo "Creating GitLab $RELEASE Release"
+    - "[[ $RELEASE = pre* ]] && npm run release:private -- $RELEASE --preReleaseId=beta --npm.tag=beta --github.preRelease --ci || npm run release:private -- $RELEASE -VV --ci"
+
+release-public:
+  needs: 
+    - release-private
+  rules: 
+    - if: $RELEASE != "none"
+  stage: deploy
+  before_script:
+    - git checkout $CI_COMMIT_REF_NAME
+    - git remote set-url origin "https://github.com/SolidLabResearch/solid-sdx-ts.git"
+    - git config --global user.name "${CI_USERNAME}"
+    - git config --global user.email "${CI_EMAIL}"
+    - npm install
+  script: 
+    - echo "Creating GitHub Release and NPM release"
+    - npm config set //registry.npmjs.org/:_authToken $NPM_TOKEN
+    - "[[ $RELEASE = pre* ]] && npm run release:public -- --preReleaseId=beta --npm.tag=beta --github.preRelease --ci || npm run release:public -- -VV --ci"
+  
